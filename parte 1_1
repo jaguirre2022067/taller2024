@@ -1,0 +1,103 @@
+#include <Adafruit_NeoPixel.h>
+
+#define trigpin 9
+#define echopin 10
+#define neopin 12
+#define numeropix 7
+
+Adafruit_NeoPixel pixels(numeropix, neopin, NEO_GRB + NEO_KHZ800);
+
+int count = 0;
+int nummax = 9;
+
+
+const int Segmentos[] = {2, 3, 4, 5, 6, 7, 8};
+
+// Mapas de los segmentos para los dígitos 0-9
+const int digits[10][7] = {
+  {1, 1, 1, 1, 1, 1, 0}, // 0
+  {0, 1, 1, 0, 0, 0, 0}, // 1
+  {1, 1, 0, 1, 1, 0, 1}, // 2
+  {1, 1, 1, 1, 0, 0, 1}, // 3
+  {0, 1, 1, 0, 0, 1, 1}, // 4
+  {1, 0, 1, 1, 0, 1, 1}, // 5
+  {1, 0, 1, 1, 1, 1, 1}, // 6
+  {1, 1, 1, 0, 0, 0, 0}, // 7
+  {1, 1, 1, 1, 1, 1, 1}, // 8
+  {1, 1, 1, 0, 0, 1, 1}  // 9
+ 
+};
+
+void setup() {
+  Serial.begin(9600);
+ 
+
+ 
+  pinMode(trigpin, OUTPUT);
+  pinMode(echopin, INPUT);
+
+  // Configuración de pines para el visualizador de 7 segmentos
+  for (int i = 0; i < 7; i++) {
+    pinMode(Segmentos[i], OUTPUT);
+  }
+
+  
+  pixels.begin();
+  pixels.show(); // Inicializar todos los pixeles apagados
+
+  // Mostrar el conteo inicial
+  displayDigit(count);
+}
+
+void loop() {
+  float distancia = distmedida();
+
+  if (distancia >= 23.0 && distancia <=  43.0) {
+    if (count < nummax) {
+      count++;
+      displayDigit(count);
+      pixels.setPixelColor(0, pixels.Color(0, 255, 0)); // Verde
+
+
+    } else {
+      displayFull();
+      pixels.setPixelColor(0, pixels.Color(255, 0, 0)); // Rojo
+    }
+    pixels.show();
+    delay(1000); 
+  }
+
+  delay(100); 
+
+floatdistmedida() {
+  // Enviar pulso de activación
+  digitalWrite(trigpin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigpin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigpin, LOW);
+
+  // Leer el pulso de eco
+  long duration = pulseIn(echopin, HIGH);
+
+  // Calcular la distancia en centímetros
+  float distancia = (duration * 0.134) / 2;
+
+  return distancia;
+}
+
+void displayDigit(int digit) {
+  for (int i = 0; i < 7; i++) {
+    digitalWrite(Segmentos[i], digits[digit][i]);
+  }
+}
+
+void displayFull() {
+  for (int i = 0; i < 7; i++) {
+    if (i == 6) { // Encender solo el segmento G
+      digitalWrite(Segmentos[i], HIGH);
+    } else {
+      digitalWrite(Segmentos[i], LOW);
+    }
+  }
+}
